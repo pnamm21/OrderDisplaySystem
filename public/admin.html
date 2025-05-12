@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asia Dragon - Admin Panel</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <h1>Mitarbeiter-Panel – Bestellungen verwalten</h1>
+
+  <div class="order-buttons" id="order-buttons"></div>
+
+  <div class="status-columns">
+    <div class="column">
+      <h2>Wird zubereitet</h2>
+      <div id="zubereitung" class="status-box"></div>
+    </div>
+    <div class="column">
+      <h2>Bereit zur Abholung</h2>
+      <div id="bereit" class="status-box"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let orders = [];
+
+    function sendOrder(id, status) {
+      socket.emit("updateOrder", { id, status });
+    }
+
+    function renderButtons() {
+      const container = document.getElementById("order-buttons");
+      container.innerHTML = '';
+      for (let i = 50; i <= 150; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = `#${i}`;
+        btn.className = "order-button";
+        btn.onclick = () => sendOrder(i, 'zubereitung');
+        container.appendChild(btn);
+      }
+    }
+
+    function renderStatus() {
+      const zubereitungBox = document.getElementById("zubereitung");
+      const bereitBox = document.getElementById("bereit");
+      zubereitungBox.innerHTML = '';
+      bereitBox.innerHTML = '';
+
+      orders.forEach(order => {
+        const div = document.createElement('div');
+        div.className = 'status-entry';
+        div.textContent = `#${order.id}`;
+        div.onclick = () => {
+          if (order.status === 'zubereitung') {
+            sendOrder(order.id, 'bereit');
+          } else if (order.status === 'bereit') {
+            sendOrder(order.id, 'ausgegeben');
+          }
+        };
+
+        if (order.status === 'zubereitung') {
+          zubereitungBox.appendChild(div);
+        } else if (order.status === 'bereit') {
+          bereitBox.appendChild(div);
+        }
+      });
+    }
+
+    socket.on("orders", data => {
+      orders = data;
+      renderStatus();
+    });
+
+    renderButtons();
+  </script>
+</body>
+</html>

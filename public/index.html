@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Asia Dragon - Bestellanzeige</title>
+  <link rel="stylesheet" href="display.css">
+</head>
+<body>
+    <div class="container">
+      <div class="column">
+        <h1>IN BEARBEITUNG</h1>
+        <div id="processing" class="order-box"></div>
+      </div>
+      <div class="column">
+        <h1>BEREIT ZUR ABHOLUNG</h1>
+        <div id="ready" class="order-box ready-box"></div>
+      </div>
+    </div>
+  
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      const processing = document.getElementById('processing');
+      const ready = document.getElementById('ready');
+      let lastReadyIds = [];
+  
+      function speak(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'de-DE';
+        window.speechSynthesis.speak(msg);
+      }
+  
+      function render(orders) {
+        processing.innerHTML = '';
+        ready.innerHTML = '';
+  
+        const currentReadyIds = [];
+  
+        orders.forEach(order => {
+          const el = document.createElement('div');
+          el.className = 'order-number';
+          el.textContent = order.id;
+  
+          if (order.status === 'zubereitung') {
+            processing.appendChild(el);
+          } else if (order.status === 'bereit') {
+            el.classList.add('blink');
+            ready.appendChild(el);
+            currentReadyIds.push(order.id);
+  
+            if (!lastReadyIds.includes(order.id)) {
+              speak(`Bestellung Nummer ${order.id} bitte!`);
+            }
+          }
+        });
+  
+        lastReadyIds = currentReadyIds;
+      }
+  
+      socket.on('orders', render);
+    </script>
+  </body>
+</html>
